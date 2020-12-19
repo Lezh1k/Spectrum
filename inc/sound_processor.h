@@ -3,7 +3,6 @@
 
 #include <set>
 #include <vector>
-#include <boost/circular_buffer.hpp>
 
 #include "fft_guard.h"
 #include "fft_window.h"
