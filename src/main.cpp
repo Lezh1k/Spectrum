@@ -27,7 +27,8 @@ int main(int argc,
   auto st = std::chrono::system_clock::now();
   SoundCallbackProcessor::instance().set_fmt(fmt_pcm);
   for (int i = 0; i < data_len; i += 960) {
-    SoundCallbackProcessor::instance().handle_new_peace_of_sound(pcm_data.data() + i, 960);
+//    SoundCallbackProcessor::instance().handle_new_peace_of_sound_1(pcm_data.data() + i, 960);
+    SoundCallbackProcessor::instance().handle_new_peace_of_sound_0(pcm_data.data() + i, 960);
   }
   auto end = std::chrono::system_clock::now();
   // callback

@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <math.h>
 
 #include "commons.h"
@@ -12,6 +13,15 @@ SoundCallbackProcessor::align(double angle,
   qpd += c * (qpd & 1);
   angle -= period * qpd;
   return angle;
+}
+
+spectrum_set
+SoundCallbackProcessor::try_to_find_tone_0(const FFTGuard &fftg0) {
+  spectrum_set max_elements;
+  auto m = std::max_element(fftg0.spectrum().begin(),
+                            fftg0.spectrum().end());
+  max_elements.insert(*m);
+  return max_elements;
 }
 ///////////////////////////////////////////////////////
 
@@ -77,14 +87,14 @@ SoundCallbackProcessor::data_accumulation(const int16_t *data,
 ///////////////////////////////////////////////////////
 
 void
-SoundCallbackProcessor::handle_new_peace_of_sound(const int16_t *data,
-                                                  size_t len) {
+SoundCallbackProcessor::handle_new_peace_of_sound_1(const int16_t *data,
+                                                    size_t len) {
   if (data == nullptr || len == 0)
     return; //cause of recursion. if len == 0 -> we need to wait new peace of data
 
   if (m_buff.size() < N) {
     int remain = data_accumulation(data, len);
-    return handle_new_peace_of_sound(&data[len-remain], remain);
+    return handle_new_peace_of_sound_1(&data[len-remain], remain);
   }
 
   if (!m_is_first_filled) {
@@ -93,7 +103,7 @@ SoundCallbackProcessor::handle_new_peace_of_sound(const int16_t *data,
     m_is_first_filled = true;
     for (size_t i = 0; i < m_shift; ++i)
       m_buff.pop_front();
-    return handle_new_peace_of_sound(data, len); // HAHAHA!!! Hell awaits.
+    return handle_new_peace_of_sound_1(data, len); // HAHAHA!!! Hell awaits.
   }
 
   if (!m_is_second_filled) {
@@ -122,7 +132,34 @@ SoundCallbackProcessor::handle_new_peace_of_sound(const int16_t *data,
   for (size_t i = 0; i < m_shift; ++i)
     m_buff.pop_front();
   m_is_second_filled = false;
-  return handle_new_peace_of_sound(data, len); // mother of god %)
+  return handle_new_peace_of_sound_1(data, len); // mother of god %)
+}
+///////////////////////////////////////////////////////
+
+void
+SoundCallbackProcessor::handle_new_peace_of_sound_0(const int16_t *data,
+                                                    size_t len) {
+  if (data == nullptr || len == 0)
+    return; //cause of recursion. if len == 0 -> we need to wait new peace of data
+
+  if (m_buff.size() < N) {
+    int remain = data_accumulation(data, len);
+    return handle_new_peace_of_sound_0(&data[len-remain], remain);
+  }
+
+  m_ptrFFTG0->fill_fft_data(m_buff, m_wk.windows());
+  m_ptrFFTG0->calculate_spectrum(m_fmt.sample_rate());
+
+  auto frequencies = try_to_find_tone_0(*m_ptrFFTG0);
+  for (auto it : frequencies)
+    std::cout << it << std::endl;
+  std::cout << "*************" << std::endl;
+
+  while (len && !m_buff.empty()) {
+    ++data; --len;
+    m_buff.pop_front();
+  }
+  return handle_new_peace_of_sound_0(data, len);
 }
 ///////////////////////////////////////////////////////
 

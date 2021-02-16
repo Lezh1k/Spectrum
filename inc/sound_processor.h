@@ -18,6 +18,7 @@ public:
 private:
   double align(double angle,
                double period);
+  spectrum_set try_to_find_tone_0(const FFTGuard& fftg0);
   spectrum_set try_to_find_tone_1(const FFTGuard& fftg0,
                                   const FFTGuard& fftg1,
                                   const PcmFormat& fmt,
@@ -48,8 +49,11 @@ public:
   void set_fmt(const PcmFormat &fmt) {m_fmt = fmt;}
   const PcmFormat &fmt() const {return m_fmt;} //I don't think we need this
   static SoundCallbackProcessor &instance();
-  void handle_new_peace_of_sound(const int16_t *data,
+  void handle_new_peace_of_sound_1(const int16_t *data,
                                  size_t len);
+
+  void handle_new_peace_of_sound_0(const int16_t *data,
+                                  size_t len);
 };
 
 #endif // SOUND_PROCESSOR_H
